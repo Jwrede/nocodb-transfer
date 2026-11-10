@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nocodb-transfer"
+version = "0.1.0"
+description = "Export, import, copy and verify NocoDB bases across installations (schema, records, links, lookups, rollups, formulas, attachments, views)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+nocodb-transfer = "nocodb_transfer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
