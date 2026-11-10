@@ -129,8 +129,10 @@ are ignored.
   details (filter trees, sorts, hidden fields, kanban grouping, gallery cover, form texts),
   identical attachment bytes, remapped record ids, `verify` finding a changed value and the
   rollup and formula that depend on it, and import into an existing empty base.
-- CI runs the integration tests between two NocoDB containers for 2026.10.1 to 2026.10.1,
-  0.263.8 (June 2025) to 2026.10.1, and latest to latest, weekly as well.
+- CI runs the integration tests between two NocoDB containers, 2026.10.1 to 2026.10.1 and
+  latest to latest, weekly as well. The NocoDB 2026.10.1 Docker image stores one-to-one links
+  on a junction table, the npm build of the same version used for local tests on a foreign
+  key; both forms are handled and tested.
 
 ```sh
 PYTHONPATH=src:tests python -m unittest discover -s tests
@@ -145,6 +147,8 @@ NOCODB_URL=... NOCODB_TOKEN=... [NOCODB_TARGET_URL=... NOCODB_TARGET_TOKEN=...] 
   view settings not listed above.
 - Values of User fields are not copied (users differ between installations); the column is
   created empty. CreatedAt, UpdatedAt, CreatedBy and auto numbers get new values on the target.
+- Only NocoDB 2026.10 and later were tested. Building the test base on 0.263.8 failed (the
+  link API of that version rejects the requests), so older sources are untested.
 - Only bases on NocoDB's default data source were tested. Bases on an external database
   connection, and composite primary keys, are not supported.
 - NocoDB Cloud was not tested. The client retries HTTP 429 and 5xx with backoff; on Cloud,

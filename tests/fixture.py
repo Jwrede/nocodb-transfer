@@ -148,6 +148,8 @@ def view_summary(client, base_id):
     for t in client.tables(base_id):
         meta = client.table(t["id"])
         title = {c["id"]: c["title"] for c in meta["columns"]}
+        # system columns carry random prefixes (nc_xxxx___...) that differ per installation
+        visible = {c["id"] for c in meta["columns"] if not c.get("system")}
         for v in client.views(t["id"]):
             key = f"{t['title']}/{v['title']}"
             item = {"type": v["type"]}
@@ -162,7 +164,7 @@ def view_summary(client, base_id):
                     return res
                 item["filters"] = tree(client.get(f"/api/v2/meta/views/{v['id']}/filters")["list"])
                 item["sorts"] = [[title.get(s["fk_column_id"]), s["direction"]] for s in client.get(f"/api/v2/meta/views/{v['id']}/sorts")["list"]]
-                item["hidden"] = sorted(title.get(c["fk_column_id"]) for c in client.get(f"/api/v2/meta/views/{v['id']}/columns")["list"] if not c.get("show"))
+                item["hidden"] = sorted(title.get(c["fk_column_id"]) for c in client.get(f"/api/v2/meta/views/{v['id']}/columns")["list"] if not c.get("show") and c["fk_column_id"] in visible)
             if v["type"] == 4:
                 item["group"] = title.get(client.get(f"/api/v2/meta/kanbans/{v['id']}").get("fk_grp_col_id"))
             if v["type"] == 2:
