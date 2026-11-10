@@ -90,6 +90,9 @@ def relations(tables):
                 key = ("mm", o.get("fk_mm_model_id"))
             elif typ in ("hm", "bt"):
                 key = ("hb", o.get("fk_child_column_id"))
+            elif typ == "oo" and o.get("fk_mm_model_id"):
+                # newer NocoDB builds one-to-one links on a junction table
+                key = ("oj", o.get("fk_mm_model_id"))
             elif typ == "oo":
                 key = ("oo", o.get("fk_child_column_id"))
             else:
@@ -124,7 +127,7 @@ def relations(tables):
                     rel["parent"], rel["child"] = t["id"], o["fk_related_model_id"]
                     rel["sides"]["parent"] = c
         else:
-            rel["type"] = "mm"
+            rel["type"] = "mm" if key[0] == "mm" else "oo"
             t, c = sides[0]
             rel["parent"], rel["child"] = t["id"], c["colOptions"]["fk_related_model_id"]
             rel["sides"]["parent"] = c

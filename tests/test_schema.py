@@ -53,6 +53,32 @@ class Relations(unittest.TestCase):
         self.assertEqual(r["sides"]["child"]["title"], "Authors")
 
 
+class JunctionOneToOne(unittest.TestCase):
+    # link metadata as reported by the nocodb/nocodb:2026.10.1 Docker image, where
+    # one-to-one links use a junction table and each side swaps child and parent
+    TABLES = [
+        {"id": "mA", "title": "Authors", "columns": [
+            {"id": "cApk", "title": "Id", "uidt": "ID", "pk": 1},
+            {"id": "cJ1", "title": "nc_m2m", "uidt": "LinkToAnotherRecord", "system": 1,
+             "colOptions": {"type": "hm", "fk_child_column_id": "cX", "fk_related_model_id": "mJ"}},
+            {"id": "cP", "title": "Passport", "uidt": "LinkToAnotherRecord", "system": 0,
+             "colOptions": {"type": "oo", "fk_child_column_id": "cApk", "fk_parent_column_id": "cPpk",
+                            "fk_related_model_id": "mP", "fk_mm_model_id": "mJ"}}]},
+        {"id": "mP", "title": "Passports", "columns": [
+            {"id": "cPpk", "title": "Id", "uidt": "ID", "pk": 1},
+            {"id": "cA", "title": "Author", "uidt": "LinkToAnotherRecord", "system": 0,
+             "colOptions": {"type": "oo", "fk_child_column_id": "cPpk", "fk_parent_column_id": "cApk",
+                            "fk_related_model_id": "mA", "fk_mm_model_id": "mJ"}}]},
+    ]
+
+    def test_paired_into_one_relation(self):
+        rels = S.relations(self.TABLES)
+        self.assertEqual(len(rels), 1)
+        r = rels[0]
+        self.assertEqual((r["type"], r["parent"], r["child"]), ("oo", "mA", "mP"))
+        self.assertEqual((r["sides"]["parent"]["title"], r["sides"]["child"]["title"]), ("Passport", "Author"))
+
+
 class DerivedOrder(unittest.TestCase):
     def test_dependencies_first(self):
         order = [c["title"] for _, c in S.derived_order(TABLES)]

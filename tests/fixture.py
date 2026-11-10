@@ -23,7 +23,16 @@ def link(client, table_id, spec):
 def build(client, title):
     base = client.create_base(title)
     bid = base["id"]
-    authors = client.create_table(bid, "Authors", [
+    old = (client.version() or "").startswith("0.")
+    create_table = client.create_table
+
+    def create(bid, name, columns):
+        # NocoDB 0.x expects the primary key column in the create-table request
+        if old:
+            columns = [{"title": "Id", "column_name": "id", "uidt": "ID"}] + columns
+        return create_table(bid, name, columns)
+
+    authors = create(bid, "Authors", [
         {"title": "Name", "uidt": "SingleLineText"},
         {"title": "Bio", "uidt": "LongText"},
         {"title": "E-mail", "uidt": "Email"},
@@ -44,13 +53,13 @@ def build(client, title):
         {"title": "Photo", "uidt": "Attachment"},
         {"title": "Notiz (intern) / ü", "uidt": "SingleLineText"},
     ])
-    books = client.create_table(bid, "Books", [
+    books = create(bid, "Books", [
         {"title": "Title", "uidt": "SingleLineText"},
         {"title": "Pages", "uidt": "Number"},
     ])
-    genres = client.create_table(bid, "Genres", [{"title": "Label", "uidt": "SingleLineText"}])
-    people = client.create_table(bid, "Staff", [{"title": "Name", "uidt": "SingleLineText"}])
-    passports = client.create_table(bid, "Passports", [{"title": "Number", "uidt": "SingleLineText"}])
+    genres = create(bid, "Genres", [{"title": "Label", "uidt": "SingleLineText"}])
+    people = create(bid, "Staff", [{"title": "Name", "uidt": "SingleLineText"}])
+    passports = create(bid, "Passports", [{"title": "Number", "uidt": "SingleLineText"}])
     A, Bk, G, P, Pp = authors["id"], books["id"], genres["id"], people["id"], passports["id"]
 
     link(client, A, {"title": "Books", "uidt": "Links", "parentId": A, "childId": Bk, "type": "hm"})
