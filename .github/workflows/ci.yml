@@ -63,6 +63,11 @@ jobs:
           export NOCODB_FROM_TOKEN="$NOCODB_TOKEN" NOCODB_TO_TOKEN="$NOCODB_TARGET_TOKEN"
           base=$(curl -s -H "xc-token: $NOCODB_TOKEN" http://127.0.0.1:18080/api/v2/meta/bases | python -c 'import json,sys; print([b["id"] for b in json.load(sys.stdin)["list"] if b["title"].startswith("fixture-")][0])')
           PYTHONPATH=src timeout 600 python -m nocodb_transfer copy --base "$base" --title cli-copy --verify
-      - name: Logs on failure
+      - name: Diagnostics on failure
         if: failure()
-        run: docker logs noco-source 2>&1 | tail -80; docker logs noco-target 2>&1 | tail -80
+        env:
+          NOCODB_URL: http://127.0.0.1:18080
+          NOCODB_TARGET_URL: http://127.0.0.1:18081
+        run: |
+          python tests/dump_relations.py || true
+          docker logs noco-source 2>&1 | tail -40; docker logs noco-target 2>&1 | tail -40

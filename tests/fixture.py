@@ -2,9 +2,22 @@
 
 import json
 
+from nocodb_transfer.client import ApiError
+
 
 def _col(table, title):
     return next(c for c in table["columns"] if c["title"] == title)
+
+
+def link(client, table_id, spec):
+    """Create a link column; NocoDB before 2026 rejects uidt Links for some types."""
+    try:
+        return client.create_column(table_id, spec)
+    except ApiError as e:
+        if spec["uidt"] != "Links":
+            raise
+        print("retrying link column with LinkToAnotherRecord:", e)
+        return client.create_column(table_id, dict(spec, uidt="LinkToAnotherRecord"))
 
 
 def build(client, title):
@@ -40,10 +53,10 @@ def build(client, title):
     passports = client.create_table(bid, "Passports", [{"title": "Number", "uidt": "SingleLineText"}])
     A, Bk, G, P, Pp = authors["id"], books["id"], genres["id"], people["id"], passports["id"]
 
-    client.create_column(A, {"title": "Books", "uidt": "Links", "parentId": A, "childId": Bk, "type": "hm"})
-    client.create_column(Bk, {"title": "Genres", "uidt": "Links", "parentId": Bk, "childId": G, "type": "mm"})
-    client.create_column(P, {"title": "Reports", "uidt": "Links", "parentId": P, "childId": P, "type": "hm"})
-    client.create_column(A, {"title": "Passport", "uidt": "LinkToAnotherRecord", "parentId": A, "childId": Pp, "type": "oo"})
+    link(client, A, {"title": "Books", "uidt": "Links", "parentId": A, "childId": Bk, "type": "hm"})
+    link(client, Bk, {"title": "Genres", "uidt": "Links", "parentId": Bk, "childId": G, "type": "mm"})
+    link(client, P, {"title": "Reports", "uidt": "Links", "parentId": P, "childId": P, "type": "hm"})
+    link(client, A, {"title": "Passport", "uidt": "LinkToAnotherRecord", "parentId": A, "childId": Pp, "type": "oo"})
     books = client.table(Bk)
     # rename the generated belongs-to side so the copy has to restore the title
     bt = next(c for c in books["columns"] if c["uidt"] == "LinkToAnotherRecord" and c["colOptions"]["type"] == "bt")
